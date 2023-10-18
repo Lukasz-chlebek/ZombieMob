@@ -1,4 +1,7 @@
 import pygame
+import math
+from typing import List
+from Obstacles.obstacles import Obstacles
 
 
 class Player(pygame.sprite.Sprite):
@@ -22,3 +25,11 @@ class Player(pygame.sprite.Sprite):
             self.position.y -= self.speed
         elif direction == 'DOWN':
             self.position.y += self.speed
+
+    def check_collide_with_obstacles(self, obstacles: List[Obstacles], x, y):
+        for obstacle in obstacles:
+            temp_position = pygame.Vector2(self.position.x + x, self.position.y + y)
+            if temp_position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
+                return True
+        return False
+

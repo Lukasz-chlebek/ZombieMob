@@ -33,7 +33,6 @@ def initialize_world():
         obstacle.draw()
 
 
-
 def redraw():
     WORLD.fill(BACKGROUND)
     PLAYER.draw()
@@ -45,13 +44,17 @@ def redraw():
 def get_input(player):
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:
-        player.move('LEFT')
+        if not player.check_collide_with_obstacles(OBSTACLES, -player.speed, 0):
+            player.move('LEFT')
     if keys[pygame.K_RIGHT]:
-        player.move('RIGHT')
+        if not player.check_collide_with_obstacles(OBSTACLES, player.speed, 0):
+            player.move('RIGHT')
     if keys[pygame.K_UP]:
-        player.move('UP')
+        if not player.check_collide_with_obstacles(OBSTACLES, 0, -player.speed):
+            player.move('UP')
     if keys[pygame.K_DOWN]:
-        player.move('DOWN')
+        if not player.check_collide_with_obstacles(OBSTACLES, 0, player.speed):
+            player.move('DOWN')
 
 
 if __name__ == '__main__':
