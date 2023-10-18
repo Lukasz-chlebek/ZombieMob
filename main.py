@@ -17,9 +17,14 @@ OBSTACLES:List[Obstacles] = []
 
 
 def create_obstacles():
-    for i in range(OBSTACLES_LIMIT):
+    i = 1
+    while i <= OBSTACLES_LIMIT:
         radius = random.randint(50, 150)
-        OBSTACLES.append(Obstacles(WORLD, random.randint(0+radius, WIDTH-radius), random.randint(0+radius, HEIGHT-radius), radius))
+        x = random.randint(0+radius, WIDTH-radius)
+        y = random.randint(0+radius, HEIGHT-radius)
+        if not pygame.Vector2(x, y).distance_to(PLAYER.position) <= radius + PLAYER.radius:
+            OBSTACLES.append(Obstacles(WORLD, x, y, radius))
+            i += 1
 
 
 def initialize_world():
