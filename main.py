@@ -43,23 +43,28 @@ def redraw():
 
 def get_input(player):
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]:
-        if not player.check_collide_with_obstacles(OBSTACLES, -player.speed, 0):
-            player.move('LEFT')
-    if keys[pygame.K_RIGHT]:
-        if not player.check_collide_with_obstacles(OBSTACLES, player.speed, 0):
-            player.move('RIGHT')
-    if keys[pygame.K_UP]:
-        if not player.check_collide_with_obstacles(OBSTACLES, 0, -player.speed):
-            player.move('UP')
-    if keys[pygame.K_DOWN]:
-        if not player.check_collide_with_obstacles(OBSTACLES, 0, player.speed):
-            player.move('DOWN')
+    key_directions = {
+        pygame.K_LEFT: (-player.speed, 0),
+        pygame.K_RIGHT: (player.speed, 0),
+        pygame.K_UP: (0, -player.speed),
+        pygame.K_DOWN: (0, player.speed),
+    }
+
+    for key, (dx, dy) in key_directions.items():
+        if keys[key] and not player.check_collide_with_obstacles(OBSTACLES, dx, dy) and player.is_not_out_of_border(
+                WIDTH, HEIGHT, dx, dy):
+            if dx == -player.speed:
+                player.move('LEFT')
+            elif dx == player.speed:
+                player.move('RIGHT')
+            elif dy == -player.speed:
+                player.move('UP')
+            elif dy == player.speed:
+                player.move('DOWN')
 
 
 if __name__ == '__main__':
     initialize_world()
-
     running = True
     while running:
         for event in pygame.event.get():

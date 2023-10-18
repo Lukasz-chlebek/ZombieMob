@@ -33,3 +33,9 @@ class Player(pygame.sprite.Sprite):
                 return True
         return False
 
+    def is_not_out_of_border(self, width, height, x, y):
+        temp_position = pygame.Vector2(self.position.x + x, self.position.y + y)
+        return (temp_position.x - self.radius >= 0 and
+                temp_position.x + self.radius <= width and
+                temp_position.y - self.radius >= 0 and
+                temp_position.y + self.radius <= height)
