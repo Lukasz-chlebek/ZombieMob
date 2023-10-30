@@ -4,9 +4,10 @@ from typing import List
 
 from Player.player import Player
 from Obstacles.obstacles import Obstacles
+from Bullet.bullet import Bullet
 
-WIDTH = 1280
-HEIGHT = 960
+WIDTH = 1080
+HEIGHT = 720
 BACKGROUND = (0, 0, 0)
 FPS = 40
 WORLD = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -14,12 +15,13 @@ PLAYER = Player(WORLD, WIDTH // 2, HEIGHT // 2)
 CLOCK = pygame.time.Clock()
 OBSTACLES_LIMIT = 4
 OBSTACLES:List[Obstacles] = []
+BULLETS:List[Bullet] = []
 
 
 def create_obstacles():
     i = 1
     while i <= OBSTACLES_LIMIT:
-        radius = random.randint(50, 150)
+        radius = random.randint(50, 100)
         x = random.randint(0+radius, WIDTH-radius)
         y = random.randint(0+radius, HEIGHT-radius)
         if not pygame.Vector2(x, y).distance_to(PLAYER.position) <= radius + PLAYER.radius:
@@ -43,7 +45,17 @@ def redraw():
     PLAYER.draw()
     for obstacle in OBSTACLES:
         obstacle.draw()
+    for bullet in BULLETS:
+        if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is__out_of_border(WIDTH,HEIGHT):
+            BULLETS.remove(bullet)
+        bullet.draw()
     pygame.display.update()
+
+
+def get_mouse(player):
+    mouse_position = pygame.mouse.get_pos()
+    if pygame.mouse.get_pressed(3)[0]:
+        BULLETS.append(player.shoot(mouse_position))
 
 
 def get_input(player):
@@ -75,6 +87,8 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                get_mouse(PLAYER)
         get_input(PLAYER)
         redraw()
     CLOCK.tick(60)

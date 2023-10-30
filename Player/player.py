@@ -2,6 +2,7 @@ import pygame
 import math
 from typing import List
 from Obstacles.obstacles import Obstacles
+from Bullet.bullet import Bullet
 
 
 class Player(pygame.sprite.Sprite):
@@ -11,7 +12,7 @@ class Player(pygame.sprite.Sprite):
         self.position = pygame.Vector2(x, y)
         self.radius = 20
         self.color = (255, 0, 0)
-        self.speed = 1
+        self.speed = 0.4
 
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.position.x, self.position.y), self.radius)
@@ -25,6 +26,11 @@ class Player(pygame.sprite.Sprite):
             self.position.y -= self.speed
         elif direction == 'DOWN':
             self.position.y += self.speed
+
+    def shoot(self, mouse_position: pygame.Vector2):
+        direction = mouse_position - self.position
+        angle = math.atan2(direction.y, direction.x)
+        return Bullet(self.screen, self.position.x, self.position.y, angle)
 
     def check_collide_with_obstacles(self, obstacles: List[Obstacles], x, y):
         for obstacle in obstacles:
