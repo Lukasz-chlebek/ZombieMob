@@ -5,6 +5,8 @@ from typing import List
 from Player.player import Player
 from Obstacles.obstacles import Obstacles
 from Bullet.bullet import Bullet
+from Enemy.enemy import Enemy
+
 
 WIDTH = 1080
 HEIGHT = 720
@@ -17,6 +19,7 @@ OBSTACLES_LIMIT = 4
 OBSTACLES:List[Obstacles] = []
 BULLETS:List[Bullet] = []
 
+enemies = [Enemy(WORLD, WIDTH//2, HEIGHT//2)]
 
 def create_obstacles():
     i = 1
@@ -49,6 +52,9 @@ def redraw():
         if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is__out_of_border(WIDTH,HEIGHT):
             BULLETS.remove(bullet)
         bullet.draw()
+
+    for enemy in enemies:
+        enemy.draw()
     pygame.display.update()
 
 
@@ -65,6 +71,10 @@ def get_input(player):
         pygame.K_RIGHT: (player.speed, 0),
         pygame.K_UP: (0, -player.speed),
         pygame.K_DOWN: (0, player.speed),
+        pygame.K_a: (-player.speed, 0),
+        pygame.K_d: (player.speed, 0),
+        pygame.K_w: (0, -player.speed),
+        pygame.K_s: (0, player.speed)
     }
 
     for key, (dx, dy) in key_directions.items():
@@ -79,6 +89,10 @@ def get_input(player):
             elif dy == player.speed:
                 player.move('DOWN')
 
+def update(deltaTime:float):
+    for enemy in enemies:
+        enemy.update(deltaTime)
+
 
 if __name__ == '__main__':
     initialize_world()
@@ -90,5 +104,6 @@ if __name__ == '__main__':
             if event.type == pygame.MOUSEBUTTONDOWN:
                 get_mouse(PLAYER)
         get_input(PLAYER)
+        update(CLOCK.get_time() / 1000.0)
         redraw()
-    CLOCK.tick(60)
+        CLOCK.tick(60)
