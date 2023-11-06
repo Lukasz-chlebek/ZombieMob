@@ -11,18 +11,18 @@ class Bullet(pygame.sprite.Sprite):
         self.screen = screen
         self.position = pygame.Vector2(x, y)
         self.radius = 4
-        self.speed = 0.8
+        self.speed = 1000
         self.color = (255, 255, 255)
         self.dx = math.cos(angle) * self.speed
         self.dy = math.sin(angle) * self.speed
 
-    def draw(self):
-        self.update()
+    def draw(self, deltaTime:float):
+        self.update(deltaTime)
         pygame.draw.circle(self.screen, self.color, (self.position.x, self.position.y), self.radius)
 
-    def update(self):
-        self.position.x += self.dx
-        self.position.y += self.dy
+    def update(self, deltaTime:float):
+        self.position.x += self.dx * deltaTime
+        self.position.y += self.dy * deltaTime
 
     def check_collide_with_obstacles(self, obstacles: List[Obstacles]):
         for obstacle in obstacles:

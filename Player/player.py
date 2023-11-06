@@ -12,20 +12,20 @@ class Player(pygame.sprite.Sprite):
         self.position:pygame.Vector2 = pygame.Vector2(x, y)
         self.radius:float = 20
         self.color = (0, 0, 255)
-        self.speed:float = 0.4
+        self.speed:float = 500
 
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.position.x, self.position.y), self.radius)
 
-    def move(self, direction:str):
+    def move(self, direction:str, deltaTime:float):
         if direction == 'LEFT':
-            self.position.x -= self.speed
+            self.position.x -= self.speed * deltaTime
         elif direction == 'RIGHT':
-            self.position.x += self.speed
+            self.position.x += self.speed * deltaTime
         elif direction == 'UP':
-            self.position.y -= self.speed
+            self.position.y -= self.speed * deltaTime
         elif direction == 'DOWN':
-            self.position.y += self.speed
+            self.position.y += self.speed * deltaTime
 
     def shoot(self, mouse_position: pygame.Vector2):
         direction = mouse_position - self.position

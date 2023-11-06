@@ -50,16 +50,15 @@ def redraw():
         obstacle.draw()
     for bullet in BULLETS:
         any_hits, hit_enemy = bullet.check_collide_with_enemy(ENEMIES)
-        if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is__out_of_border(WIDTH,HEIGHT) or any_hits:
+        if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is_out_of_border(WIDTH,HEIGHT) or any_hits:
             BULLETS.remove(bullet)
             if any_hits:
                 ENEMIES.pop(hit_enemy)
-        bullet.draw()
+        bullet.draw(CLOCK.get_time() / 1000.0)
 
     for enemy in ENEMIES:
         enemy.draw()
     pygame.display.update()
-
 
 def get_mouse(player):
     mouse_position = pygame.mouse.get_pos()
@@ -67,7 +66,7 @@ def get_mouse(player):
         BULLETS.append(player.shoot(mouse_position))
 
 
-def get_input(player):
+def get_input(player, deltaTime:float):
     keys = pygame.key.get_pressed()
     key_directions = {
         pygame.K_LEFT: (-player.speed, 0),
@@ -81,16 +80,16 @@ def get_input(player):
     }
 
     for key, (dx, dy) in key_directions.items():
-        if keys[key] and not player.check_collide_with_obstacles(OBSTACLES, dx, dy) and player.is_not_out_of_border(
-                WIDTH, HEIGHT, dx, dy):
+        if keys[key] and not player.check_collide_with_obstacles(OBSTACLES, dx * deltaTime, dy * deltaTime) and player.is_not_out_of_border(
+                WIDTH, HEIGHT, dx * deltaTime, dy * deltaTime):
             if dx == -player.speed:
-                player.move('LEFT')
+                player.move('LEFT', deltaTime)
             elif dx == player.speed:
-                player.move('RIGHT')
+                player.move('RIGHT', deltaTime)
             elif dy == -player.speed:
-                player.move('UP')
+                player.move('UP', deltaTime)
             elif dy == player.speed:
-                player.move('DOWN')
+                player.move('DOWN', deltaTime)
 
 def update(deltaTime:float):
     for enemy in ENEMIES:
@@ -106,7 +105,7 @@ if __name__ == '__main__':
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 get_mouse(PLAYER)
-        get_input(PLAYER)
+        get_input(PLAYER, CLOCK.get_time() / 1000.0)
         update(CLOCK.get_time() / 1000.0)
         redraw()
         CLOCK.tick(60)
