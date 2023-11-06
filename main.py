@@ -19,7 +19,7 @@ OBSTACLES_LIMIT = 4
 OBSTACLES:List[Obstacles] = []
 BULLETS:List[Bullet] = []
 
-enemies = [Enemy(WORLD, WIDTH//2, HEIGHT//2)]
+ENEMIES:List[Enemy] = [Enemy(WORLD, WIDTH//2, HEIGHT//2)]
 
 def create_obstacles():
     i = 1
@@ -49,11 +49,14 @@ def redraw():
     for obstacle in OBSTACLES:
         obstacle.draw()
     for bullet in BULLETS:
-        if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is__out_of_border(WIDTH,HEIGHT):
+        any_hits, hit_enemy = bullet.check_collide_with_enemy(ENEMIES)
+        if bullet.check_collide_with_obstacles(OBSTACLES) or bullet.is__out_of_border(WIDTH,HEIGHT) or any_hits:
             BULLETS.remove(bullet)
+            if any_hits:
+                ENEMIES.pop(hit_enemy)
         bullet.draw()
 
-    for enemy in enemies:
+    for enemy in ENEMIES:
         enemy.draw()
     pygame.display.update()
 
@@ -90,7 +93,7 @@ def get_input(player):
                 player.move('DOWN')
 
 def update(deltaTime:float):
-    for enemy in enemies:
+    for enemy in ENEMIES:
         enemy.update(deltaTime)
 
 

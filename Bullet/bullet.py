@@ -2,6 +2,7 @@ import pygame
 import math
 from typing import List
 from Obstacles.obstacles import Obstacles
+from Enemy.enemy import Enemy
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -29,9 +30,16 @@ class Bullet(pygame.sprite.Sprite):
                 return True
         return False
 
-    def is__out_of_border(self, width, height):
+    def is_out_of_border(self, width, height):
         return (self.position.x - self.radius < 0 and
                 self.position.x + self.radius > width and
                 self.position.y - self.radius < 0 and
                 self.position.y + self.radius > height)
+
+    def check_collide_with_enemy(self, enemies: List[Enemy]):
+        for enemy in enemies:
+            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius:
+                return True, enemies.index(enemy)
+        return False, -1
+
 
