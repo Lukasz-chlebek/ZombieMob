@@ -26,6 +26,7 @@ def initialize_world():
 
 
 def redraw():
+
     WORLD.fill(BACKGROUND)
     PLAYER.draw()
     for obstacle in OBSTACLES:
@@ -40,6 +41,11 @@ def redraw():
 
     for enemy in ENEMIES:
         enemy.draw()
+    for liness in lines:
+        liness.draw()
+    print(len(lines))
+    clear_lines()
+
     pygame.display.update()
 
 def get_mouse(player):

@@ -1,5 +1,8 @@
 import pygame
 import random
+import math
+import globals
+import line
 
 
 class SteeringBehaviors:
@@ -33,7 +36,53 @@ class SteeringBehaviors:
         targetLocal = self.wanderTarget + pygame.Vector2(self.wanderDistance, 0)
         return targetLocal
 
+    def obstacles_avoidance(self):
+        min_detection_box = 100
+        box_Length = min_detection_box + (self.vehicle.velocity.length() / self.vehicle.maxVelocity) * min_detection_box
+
+        dist_to_closest_ip = 9999999
+        local_pos_of_closest_obstacle = pygame.Vector2()
+        closest_intersect_obstacle = None
+
+        heading_angle = self.vehicle.velocity.angle_to(pygame.Vector2(1, 0))
+
+
+
+        for obstacle in globals.OBSTACLES:
+            obstacle.color = (120, 255, 120)
+            #otagowane tylko
+            local_pos = (obstacle.position - self.vehicle.position).rotate(-heading_angle)
+
+
+            if local_pos.x >= 0:
+                expanded_radius = obstacle.radius + self.vehicle.radius
+                if math.fabs(local_pos.y) < expanded_radius:
+                    cX = local_pos.x
+                    cY = local_pos.y
+                    sqrt_part = math.sqrt(expanded_radius*expanded_radius-cY*cY)
+                    ip = cX - sqrt_part
+                    if ip <= 0:
+                        ip = cX + sqrt_part
+                    if ip < dist_to_closest_ip:
+                        dist_to_closest_ip = ip
+                        closest_intersect_obstacle = obstacle
+                        local_pos_of_closest_obstacle = local_pos
+
+        if closest_intersect_obstacle is not None:
+            multiplier = 1.0 + (box_Length - local_pos_of_closest_obstacle.x) / box_Length
+            steeringForceY = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.y )*multiplier
+            brakingWeight = 0.5
+            steeringForceX = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.x) * brakingWeight
+            print(pygame.Vector2(steeringForceX,steeringForceY))
+            closest_intersect_obstacle.color = (255, 0, 0)
+            return pygame.Vector2(steeringForceX,steeringForceY)
+        else:
+            return pygame.Vector2(0,0)
+
+
+
     def calculate(self) -> pygame.Vector2:
+        return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()
                                             
