@@ -34,7 +34,7 @@ class SteeringBehaviors:
         return targetLocal
 
     def calculate(self) -> pygame.Vector2:
-        #return self.seek(pygame.Vector2(pygame.mouse.get_pos()))
+        return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()
                                             
 def randomClamped() -> float:

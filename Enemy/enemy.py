@@ -26,7 +26,6 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self, deltaTime:float) -> None:
         acceleration = self.steering.calculate()
-        print(acceleration)
         self.velocity += acceleration * deltaTime
         if self.velocity.length() > 0:
             self.velocity.clamp_magnitude_ip(self.maxVelocity)

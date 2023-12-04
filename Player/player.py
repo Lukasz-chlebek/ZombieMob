@@ -3,7 +3,7 @@ import math
 from typing import List
 from Obstacles.obstacles import Obstacles
 from Bullet.bullet import Bullet
-
+import globals
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, screen:pygame.surface, x, y):
@@ -13,35 +13,43 @@ class Player(pygame.sprite.Sprite):
         self.radius:float = 20
         self.color = (0, 0, 255)
         self.speed:float = 500
+        self.direction:pygame.Vector2 = pygame.Vector2(0, 0)
+
 
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.position.x, self.position.y), self.radius)
 
-    def move(self, direction:str, deltaTime:float):
-        if direction == 'LEFT':
-            self.position.x -= self.speed * deltaTime
-        elif direction == 'RIGHT':
-            self.position.x += self.speed * deltaTime
-        elif direction == 'UP':
-            self.position.y -= self.speed * deltaTime
-        elif direction == 'DOWN':
-            self.position.y += self.speed * deltaTime
+
+    def set_direction(self, direction:pygame.Vector2) -> None:
+        self.direction = direction
+
+
+    def move(self, deltaTime:float) -> None:
+        self.position += self.direction * self.speed * deltaTime
+
+    def update(self, deltaTime:float) -> None:
+        self.move(deltaTime)
+        self.check_collide_with_border(deltaTime)
+        self.check_collide_with_obstacles(deltaTime)
+
 
     def shoot(self, mouse_position: pygame.Vector2):
         direction = mouse_position - self.position
         angle = math.atan2(direction.y, direction.x)
         return Bullet(self.screen, self.position.x, self.position.y, angle)
 
-    def check_collide_with_obstacles(self, obstacles: List[Obstacles], x:float, y:float):
-        for obstacle in obstacles:
-            temp_position = pygame.Vector2(self.position.x + x, self.position.y + y)
-            if temp_position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
-                return True
-        return False
+    def check_collide_with_obstacles(self, deltaTime:float):
+        for obstacle in globals.OBSTACLES:
+            if self.position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
+               self.position = -(obstacle.position - self.position).normalize() * (self.radius + obstacle.radius) + obstacle.position
 
-    def is_not_out_of_border(self, width:float, height:float, x:float, y:float):
-        temp_position = pygame.Vector2(self.position.x + x, self.position.y + y)
-        return (temp_position.x - self.radius >= 0 and
-                temp_position.x + self.radius <= width and
-                temp_position.y - self.radius >= 0 and
-                temp_position.y + self.radius <= height)
+
+    def check_collide_with_border(self, deltaTime):
+        if self.position.x + self.radius > globals.WIDTH:
+            self.position.x = globals.WIDTH - self.radius
+        if self.position.y + self.radius > globals.HEIGHT:
+            self.position.y = globals.HEIGHT - self.radius
+        if self.position.x - self.radius < 0:
+            self.position.x = self.radius
+        if self.position.y - self.radius < 0:
+            self.position.y = self.radius

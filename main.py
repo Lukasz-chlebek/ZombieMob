@@ -1,25 +1,7 @@
 import pygame
 import random
-from typing import List
+from globals import *
 
-from Player.player import Player
-from Obstacles.obstacles import Obstacles
-from Bullet.bullet import Bullet
-from Enemy.enemy import Enemy
-
-
-WIDTH = 1080
-HEIGHT = 720
-BACKGROUND = (0, 0, 0)
-FPS = 40
-WORLD = pygame.display.set_mode((WIDTH, HEIGHT))
-PLAYER = Player(WORLD, WIDTH // 2, HEIGHT // 2)
-CLOCK = pygame.time.Clock()
-OBSTACLES_LIMIT = 4
-OBSTACLES:List[Obstacles] = []
-BULLETS:List[Bullet] = []
-
-ENEMIES:List[Enemy] = [Enemy(WORLD, WIDTH//2, HEIGHT//2)]
 
 def create_obstacles():
     i = 1
@@ -69,43 +51,40 @@ def get_mouse(player):
 def get_input(player, deltaTime:float):
     keys = pygame.key.get_pressed()
     key_directions = {
-        pygame.K_LEFT: (-player.speed, 0),
-        pygame.K_RIGHT: (player.speed, 0),
-        pygame.K_UP: (0, -player.speed),
-        pygame.K_DOWN: (0, player.speed),
-        pygame.K_a: (-player.speed, 0),
-        pygame.K_d: (player.speed, 0),
-        pygame.K_w: (0, -player.speed),
-        pygame.K_s: (0, player.speed)
+        pygame.K_LEFT: (1, 0),
+        pygame.K_RIGHT: (1, 0),
+        pygame.K_UP: (0, -1),
+        pygame.K_DOWN: (0,1),
+        pygame.K_a: (-1, 0),
+        pygame.K_d: (1, 0),
+        pygame.K_w: (0, -1),
+        pygame.K_s: (0, 1)
     }
 
+    direction = pygame.Vector2(0,0)
     for key, (dx, dy) in key_directions.items():
-        if keys[key] and not player.check_collide_with_obstacles(OBSTACLES, dx * deltaTime, dy * deltaTime) and player.is_not_out_of_border(
-                WIDTH, HEIGHT, dx * deltaTime, dy * deltaTime):
-            if dx == -player.speed:
-                player.move('LEFT', deltaTime)
-            elif dx == player.speed:
-                player.move('RIGHT', deltaTime)
-            elif dy == -player.speed:
-                player.move('UP', deltaTime)
-            elif dy == player.speed:
-                player.move('DOWN', deltaTime)
+        if keys[key]:
+            direction += pygame.Vector2(dx, dy)
+    if direction.length_squared() > 0:
+        direction.normalize_ip()
+    player.set_direction(direction)
 
 def update(deltaTime:float):
     for enemy in ENEMIES:
         enemy.update(deltaTime)
-
+    PLAYER.update(deltaTime)
 
 if __name__ == '__main__':
     initialize_world()
     running = True
     while running:
+        deltaTime = CLOCK.get_time() / 1000
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 get_mouse(PLAYER)
-        get_input(PLAYER, CLOCK.get_time() / 1000.0)
-        update(CLOCK.get_time() / 1000.0)
+        get_input(PLAYER, deltaTime)
+        update(deltaTime)
         redraw()
         CLOCK.tick(60)
