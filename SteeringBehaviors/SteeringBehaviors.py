@@ -20,6 +20,16 @@ class SteeringBehaviors:
         desiredVelocity = (target - self.vehicle.Pos()).normalize() * self.vehicle.maxForce
         return desiredVelocity - self.vehicle.velocity
 
+    def arrive(self, target:pygame.Vector2):
+        to_target = target- self.vehicle.position
+        dist = to_target.length()
+        if dist > 0:
+            deceleration_tweaker = 0.3
+            speed = dist/(deceleration_tweaker * 2)
+            speed = min(speed, self.vehicle.maxVelocity)
+            desired_velocity = to_target * speed /dist
+            return desired_velocity - self.vehicle.velocity
+        return pygame.Vector2(0,0)
 
     def flee(self, target:pygame.Vector2) -> pygame.Vector2:      
         if target.distance_squared_to(self.vehicle.Pos()) > self.panicDistanceSq:
@@ -95,10 +105,10 @@ class SteeringBehaviors:
                 closest = obstacle
         if dist_to_closest == 9999999:
             return pygame.Vector2(0,0) #tu evade
-        return self.seek(best_hiding_spot) # zmienic na arrive
+        return self.arrive(best_hiding_spot) # zmienic na arrive
 
     def calculate(self) -> pygame.Vector2:
-        return self.hide() + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + 5* self.wander()
+        return self.obstacles_avoidance()*10 + self.hide() + self.flee(pygame.Vector2(pygame.mouse.get_pos())) +  self.wander()
         return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + self.wander()
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()
