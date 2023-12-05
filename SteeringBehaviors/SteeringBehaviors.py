@@ -37,24 +37,20 @@ class SteeringBehaviors:
         return targetLocal
 
     def obstacles_avoidance(self):
-        min_detection_box = 100
+        min_detection_box = 50
         box_Length = min_detection_box + (self.vehicle.velocity.length() / self.vehicle.maxVelocity) * min_detection_box
-
         dist_to_closest_ip = 9999999
         local_pos_of_closest_obstacle = pygame.Vector2()
         closest_intersect_obstacle = None
 
         heading_angle = self.vehicle.velocity.angle_to(pygame.Vector2(1, 0))
-
-
-
+        globals.lines.append(line.Line(self.vehicle.position, self.vehicle.position + pygame.Vector2(box_Length,0).rotate(-heading_angle), (255,0,0)))
         for obstacle in globals.OBSTACLES:
             obstacle.color = (120, 255, 120)
             #otagowane tylko
-            local_pos = (obstacle.position - self.vehicle.position).rotate(-heading_angle)
-
-
-            if local_pos.x >= 0:
+            local_pos:pygame.Vector2 = (obstacle.position - self.vehicle.position).rotate(heading_angle)
+            if local_pos.x >= 0 and local_pos.length() - obstacle.radius <= box_Length:
+                globals.lines.append(line.Line(self.vehicle.position, pygame.Vector2(self.vehicle.position + local_pos.rotate(-heading_angle))))
                 expanded_radius = obstacle.radius + self.vehicle.radius
                 if math.fabs(local_pos.y) < expanded_radius:
                     cX = local_pos.x
@@ -71,18 +67,17 @@ class SteeringBehaviors:
         if closest_intersect_obstacle is not None:
             multiplier = 1.0 + (box_Length - local_pos_of_closest_obstacle.x) / box_Length
             steeringForceY = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.y )*multiplier
-            brakingWeight = 0.5
+            brakingWeight = 0.1
             steeringForceX = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.x) * brakingWeight
-            print(pygame.Vector2(steeringForceX,steeringForceY))
             closest_intersect_obstacle.color = (255, 0, 0)
-            return pygame.Vector2(steeringForceX,steeringForceY)
+            return pygame.Vector2(steeringForceX,steeringForceY).rotate(-heading_angle)
         else:
             return pygame.Vector2(0,0)
 
 
 
     def calculate(self) -> pygame.Vector2:
-        return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos()))
+        return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + self.wander()
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()
                                             
