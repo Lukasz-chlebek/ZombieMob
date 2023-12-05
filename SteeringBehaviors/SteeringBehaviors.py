@@ -74,9 +74,31 @@ class SteeringBehaviors:
         else:
             return pygame.Vector2(0,0)
 
+    def get_hiding_position(self, obstacles_pos: pygame.Vector2, obstacle_radius: float, target_pos: pygame.Vector2):
+        distance_from_boundary = 30
+        dist_away = obstacle_radius + distance_from_boundary
+        to_obstacle = (obstacles_pos - target_pos).normalize()
+        return (to_obstacle * dist_away) + obstacles_pos
 
+    def hide(self):
+        dist_to_closest = 9999999
+        best_hiding_spot = pygame.Vector2
+        closest = None
+        for obstacle in globals.OBSTACLES:
+            hiding_spot = self.get_hiding_position(obstacle.position, obstacle.radius, globals.PLAYER.position)
+            ySeparation = hiding_spot.y - self.vehicle.position.y
+            xSeparation = hiding_spot.x - self.vehicle.position.x
+            dist = ySeparation*ySeparation + xSeparation*xSeparation
+            if dist < dist_to_closest:
+                dist_to_closest = dist
+                best_hiding_spot = hiding_spot
+                closest = obstacle
+        if dist_to_closest == 9999999:
+            return pygame.Vector2(0,0) #tu evade
+        return self.seek(best_hiding_spot) # zmienic na arrive
 
     def calculate(self) -> pygame.Vector2:
+        return self.hide() + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + 5* self.wander()
         return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + self.wander()
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()
