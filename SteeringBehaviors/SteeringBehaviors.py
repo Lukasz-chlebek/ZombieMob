@@ -12,9 +12,9 @@ class SteeringBehaviors:
         self.panicDistanceSq:float = self.panicDistance ** 2
         self.wanderRadius:float = 100
         self.wanderDistance:float = 30
-        self.wanderJitter:float = 30
+        self.wanderJitter:float = 10
         self.wanderTarget = pygame.Vector2(0,0)
-
+        self.wall_distance_avoid = self.vehicle.radius * 10
 
     def seek(self, target:pygame.Vector2) -> pygame.Vector2:
         desiredVelocity = (target - self.vehicle.Pos()).normalize() * self.vehicle.maxForce
@@ -40,10 +40,13 @@ class SteeringBehaviors:
     
 
     def wander(self) -> pygame.Vector2:
+        #self.wanderTarget.rotate_ip(-self.vehicle.velocity.angle_to(self.wanderTarget))
+        #globals.lines.append(line.Line(self.vehicle.position, self.vehicle.position + self.wanderTarget))
         self.wanderTarget += pygame.Vector2(randomClamped() * self.wanderJitter, randomClamped() * self.wanderJitter)
         self.wanderTarget = self.wanderTarget.normalize()
         self.wanderTarget *= self.wanderRadius
         targetLocal = self.wanderTarget + pygame.Vector2(self.wanderDistance, 0)
+        globals.lines.append(line.Line(self.vehicle.position, self.vehicle.position + targetLocal))
         return targetLocal
 
     def obstacles_avoidance(self):
@@ -79,10 +82,81 @@ class SteeringBehaviors:
             steeringForceY = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.y )*multiplier
             brakingWeight = 0.1
             steeringForceX = (closest_intersect_obstacle.radius - local_pos_of_closest_obstacle.x) * brakingWeight
-            closest_intersect_obstacle.color = (255, 0, 0)
+            globals.lines.append(line.Line(self.vehicle.position, pygame.Vector2(self.vehicle.position + local_pos_of_closest_obstacle.rotate(-heading_angle)),  (0,0,255)))
             return pygame.Vector2(steeringForceX,steeringForceY).rotate(-heading_angle)
         else:
             return pygame.Vector2(0,0)
+
+    def create_feelers(self):
+        feelers = []
+        heading = self.vehicle.heading
+        feelers.append(self.vehicle.position + self.wall_distance_avoid * heading)
+        feelers.append(self.vehicle.position + self.wall_distance_avoid/2.0 * heading.rotate(90))
+        feelers.append(self.vehicle.position + self.wall_distance_avoid/2.0 * heading.rotate(-90))
+        return feelers
+     
+    def line_intersection_2D(self, A:pygame.Vector2, B:pygame.Vector2, C:pygame.Vector2, D:pygame.Vector2):
+        rTop = (A.y-C.y)*(D.x-C.x)-(A.x-C.x)*(D.y-C.y)
+        rBot = (B.x-A.x)*(D.y-C.y)-(B.y-A.y)*(D.x-C.x)
+
+        sTop = (A.y-C.y)*(B.x-A.x)-(A.x-C.x)*(B.y-A.y)
+        sBot = (B.x-A.x)*(D.y-C.y)-(B.y-A.y)*(D.x-C.x)
+        dist = 0
+        point:pygame.Vector2 = pygame.Vector2(0,0)
+        if ( (rBot == 0) or (sBot == 0)):
+            return (False, dist, point)
+        
+        r = rTop/rBot
+        s = sTop/sBot
+
+        if( (r > 0) and (r < 1) and (s > 0) and (s < 1) ):
+            dist = A.distance_to(B) * r
+            point = A + r * (B - A)
+            return (True, dist, point)
+
+        else:   
+            dist = 0
+        return (False, dist, point)
+    
+
+    def wall_avoidance(self):
+        feelers = self.create_feelers()
+  
+        DistToThisIP    = 0.0
+        DistToClosestIP = 10000000.0
+
+        ClosestWall = -1
+
+        SteeringForce = pygame.Vector2() 
+        point = pygame.Vector2()         
+        ClosestPoint = pygame.Vector2() 
+        walls = [
+            {"from": pygame.Vector2(0, 0), "to": pygame.Vector2(0, globals.HEIGHT), "normal": pygame.Vector2(1,0)},
+            {"from": pygame.Vector2(globals.WIDTH,0), "to": pygame.Vector2(globals.WIDTH, globals.HEIGHT), "normal": pygame.Vector2(-1,0)},
+            {"from": pygame.Vector2(0,0), "to": pygame.Vector2(globals.WIDTH, 0), "normal": pygame.Vector2(0,1)},
+            {"from": pygame.Vector2(0, globals.HEIGHT), "to": pygame.Vector2(globals.WIDTH, globals.HEIGHT), "normal": pygame.Vector2(0,-1)}
+        ]
+
+        for flr, feeler in enumerate(feelers):
+            globals.lines.append(line.Line(self.vehicle.position, feeler))
+            for w, wall in enumerate(walls):
+                intersect, DistToThisIP, point = self.line_intersection_2D(self.vehicle.position, feeler, wall["from"], wall["to"])
+                if (intersect == True):
+                    if (DistToThisIP < DistToClosestIP):        
+                        DistToClosestIP = DistToThisIP
+                        ClosestWall = w
+                        ClosestPoint = point
+            
+            if (ClosestWall >= 0):
+                #calculate by what distance the projected position of the agent
+                #will overshoot the wall
+                OverShoot:pygame.Vector2 = feeler - ClosestPoint
+                #create a force in the direction of the wall normal, with a 
+                #magnitude of the overshoot
+                SteeringForce = walls[ClosestWall]["normal"] * OverShoot.length()
+        globals.lines.append(line.Line(self.vehicle.position, self.vehicle.position + SteeringForce, (255,0,0)))
+        return SteeringForce
+    
 
     def get_hiding_position(self, obstacles_pos: pygame.Vector2, obstacle_radius: float, target_pos: pygame.Vector2):
         distance_from_boundary = 30
@@ -108,7 +182,13 @@ class SteeringBehaviors:
         return self.arrive(best_hiding_spot) # zmienic na arrive
 
     def calculate(self) -> pygame.Vector2:
-        return self.obstacles_avoidance()*10 + self.hide() + self.flee(pygame.Vector2(pygame.mouse.get_pos())) +  self.wander()
+        wander = self.wander() * 1
+        wall_avoidance = self.wall_avoidance() * 10
+        obstacle_avoidance = self.obstacles_avoidance() * 10
+        hide = self.hide() * 4
+        flee = self.flee(pygame.Vector2(pygame.mouse.get_pos()))
+        accumulatedForce = wander + wall_avoidance + obstacle_avoidance + hide + flee
+        return accumulatedForce
         return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + self.wander()
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
         return self.wander()

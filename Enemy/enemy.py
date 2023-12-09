@@ -10,13 +10,13 @@ class Enemy(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.screen:pygame.surface = screen
         self.position:pygame.Vector2 = pygame.Vector2(x, y)
-        self.radius:float = 20
+        self.radius:float = 6
         self.color = (255, 0, 0)
         self.velocity:pygame.Vector2 = pygame.Vector2()
         self.heading:pygame.Vector2 = pygame.Vector2()
         self.side:pygame.Vector2 = pygame.Vector2()
         self.mass:float = 1
-        self.maxVelocity:float = 200
+        self.maxVelocity:float = 400
         self.maxForce:float = 800
         self.maxTrunRate:float = 10
         self.steering = SteeringBehaviors(self)
@@ -31,15 +31,34 @@ class Enemy(pygame.sprite.Sprite):
         if self.velocity.length() > 0:
             self.velocity.clamp_magnitude_ip(self.maxVelocity)
         self.position += self.velocity * deltaTime
-        if self.position.x < 0:
-            self.position.x = globals.WIDTH
-        if self.position.x > globals.WIDTH:
-            self.position.x = 0
-        if self.position.y < 0:
-            self.position.y = globals.HEIGHT
-        if self.position.y > globals.HEIGHT:
-            self.position.y = 0
-        pass
+        
+        if self.velocity.length() != 0:
+            self.heading = self.velocity.normalize()
+       
+        self.checkCollisionWithEntities()
+        self.checkCollisionWithWalls()
+        
+    def checkCollisionWithEntities(self):
+        for obstacle in globals.OBSTACLES:
+            if self.position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
+               self.position = -(obstacle.position - self.position).normalize() * (self.radius + obstacle.radius) + obstacle.position
+        for enemy in globals.ENEMIES:
+            if enemy is self:
+                continue
+            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius:
+               self.position = -(enemy.position - self.position).normalize() * (self.radius + enemy.radius) + enemy.position
+
+
+    def checkCollisionWithWalls(self):
+        if self.position.x - self.radius < 0:
+            self.position.x = self.radius
+        if self.position.x + self.radius> globals.WIDTH:
+            self.position.x = globals.WIDTH - self.radius
+        if self.position.y - self.radius < 0:
+            self.position.y = self.radius
+        if self.position.y + self.radius > globals.HEIGHT:
+            self.position.y = globals.HEIGHT - self.radius
+        
 
     def Pos(self) -> pygame.Vector2:
         return self.position
