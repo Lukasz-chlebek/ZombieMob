@@ -24,7 +24,6 @@ class Player(pygame.sprite.Sprite):
         angle = math.degrees(angle)
         rotated_triangle_vertices = []
         for point in triangle_vertices:
-            print(point.x, point.y)
             rotated_triangle_vertices.append(self.rotate(point.x, point.y, angle))
         pygame.draw.polygon(self.screen, self.color, rotated_triangle_vertices)
 

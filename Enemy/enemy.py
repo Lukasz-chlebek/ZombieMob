@@ -20,6 +20,7 @@ class Enemy(pygame.sprite.Sprite):
         self.maxForce:float = 800
         self.maxTrunRate:float = 10
         self.steering = SteeringBehaviors(self)
+        self.is_in_world = False
         
 
     def draw(self) -> None:
@@ -34,9 +35,10 @@ class Enemy(pygame.sprite.Sprite):
         
         if self.velocity.length() != 0:
             self.heading = self.velocity.normalize()
-       
+        self.checkIfISInWorld()
         self.checkCollisionWithEntities()
-        self.checkCollisionWithWalls()
+        if self.is_in_world:
+            self.checkCollisionWithWalls()
         
     def checkCollisionWithEntities(self):
         for obstacle in globals.OBSTACLES:
@@ -45,7 +47,7 @@ class Enemy(pygame.sprite.Sprite):
         for enemy in globals.ENEMIES:
             if enemy is self:
                 continue
-            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius:
+            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius and (enemy.position - self.position).length()!=0:
                self.position = -(enemy.position - self.position).normalize() * (self.radius + enemy.radius) + enemy.position
 
 
@@ -58,7 +60,9 @@ class Enemy(pygame.sprite.Sprite):
             self.position.y = self.radius
         if self.position.y + self.radius > globals.HEIGHT:
             self.position.y = globals.HEIGHT - self.radius
-        
+
+    def checkIfISInWorld(self):
+        self.is_in_world = 0 < self.position.x < globals.WIDTH and 0 < self.position.y < globals.HEIGHT
 
     def Pos(self) -> pygame.Vector2:
         return self.position

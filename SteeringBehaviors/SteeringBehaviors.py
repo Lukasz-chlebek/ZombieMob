@@ -183,7 +183,7 @@ class SteeringBehaviors:
 
     def calculate(self) -> pygame.Vector2:
         wander = self.wander() * 1
-        wall_avoidance = self.wall_avoidance() * 10
+        wall_avoidance = self.wall_avoidance() * 10 if self.vehicle.is_in_world else pygame.Vector2(0,0)
         obstacle_avoidance = self.obstacles_avoidance() * 10
         hide = self.hide() * 4
         flee = self.flee(pygame.Vector2(pygame.mouse.get_pos()))

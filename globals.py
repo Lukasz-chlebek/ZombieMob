@@ -16,9 +16,10 @@ WORLD = pygame.display.set_mode((WIDTH, HEIGHT))
 PLAYER = Player.player.Player(WORLD, WIDTH // 2, HEIGHT // 2)
 CLOCK = pygame.time.Clock()
 OBSTACLES_LIMIT = 8
+ENEMIES_LIMIT = 50
 OBSTACLES:List[Obstacles.obstacles.Obstacles] = []
 BULLETS:List[Bullet.bullet.Bullet] = []
-ENEMIES:List[Enemy.enemy.Enemy] = [Enemy.enemy.Enemy(WORLD, WIDTH//2, HEIGHT//2)]
+ENEMIES:List[Enemy.enemy.Enemy] = []
 lines:List[line.Line] =[]
 
 

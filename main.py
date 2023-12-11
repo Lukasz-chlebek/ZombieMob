@@ -2,6 +2,7 @@ import pygame
 import random
 import globals
 from Obstacles.obstacles import Obstacles
+from Enemy.enemy import Enemy
 
 def create_obstacles():
     i = 1
@@ -13,11 +14,33 @@ def create_obstacles():
             globals.OBSTACLES.append(Obstacles(globals.WORLD, x, y, radius))
             i += 1
 
+def create_enemy():
+    global x_pos, y_pos
+    i = 1
+    const_dist = 500
+    while i <= globals.ENEMIES_LIMIT:
+        direction = random.randrange(4)
+        if direction == 0:
+            x_pos = random.randrange(0, globals.WIDTH)
+            y_pos = -const_dist
+        elif direction == 1:
+            x_pos = globals.WIDTH + const_dist
+            y_pos = random.randrange(0, globals.HEIGHT)
+        elif direction == 2:
+            x_pos = random.randrange(0, globals.WIDTH)
+            y_pos = globals.HEIGHT + const_dist
+        elif direction == 3:
+            x_pos = -const_dist
+            y_pos = random.randrange(0, globals.HEIGHT)
+        globals.ENEMIES.append(Enemy(globals.WORLD, x_pos, y_pos))
+        i += 1
+
 
 def initialize_world():
     pygame.init()
     pygame.display.set_caption('Zombie mod')
     create_obstacles()
+    create_enemy()
     globals.WORLD.fill(globals.BACKGROUND)
     pygame.display.flip()
     mouse_x, mouse_y = pygame.mouse.get_pos()
