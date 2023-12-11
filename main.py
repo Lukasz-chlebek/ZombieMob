@@ -20,15 +20,16 @@ def initialize_world():
     create_obstacles()
     globals.WORLD.fill(globals.BACKGROUND)
     pygame.display.flip()
-    globals.PLAYER.draw()
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    globals.PLAYER.draw(mouse_x,mouse_y)
     for obstacle in globals.OBSTACLES:
         obstacle.draw()
 
 
 def redraw():
-
     globals.WORLD.fill(globals.BACKGROUND)
-    globals.PLAYER.draw()
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+    globals.PLAYER.draw(mouse_x, mouse_y)
     for obstacle in globals.OBSTACLES:
         obstacle.draw()
     for bullet in globals.BULLETS:
