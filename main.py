@@ -18,7 +18,7 @@ def create_enemy():
     global x_pos, y_pos
     i = 1
     const_dist = 500
-    while i <= globals.ENEMIES_LIMIT:
+    while len(globals.ENEMIES) <= globals.ENEMIES_LIMIT and i < 5:
         direction = random.randrange(4)
         if direction == 0:
             x_pos = random.randrange(0, globals.WIDTH)
@@ -60,13 +60,16 @@ def redraw():
         if bullet.check_collide_with_obstacles(globals.OBSTACLES) or bullet.is_out_of_border(globals.WIDTH,globals.HEIGHT) or any_hits:
             globals.BULLETS.remove(bullet)
             if any_hits:
+                
                 globals.ENEMIES.pop(hit_enemy)
         bullet.draw(globals.CLOCK.get_time() / 1000.0)
 
     for enemy in globals.ENEMIES:
         enemy.draw()
-    for liness in globals.lines:
-        liness.draw()
+    
+    if globals.debug_draw:
+        for liness in globals.lines:
+            liness.draw()
 
     globals.clear_lines()
     pygame.display.update()
@@ -90,15 +93,21 @@ def get_input(player, deltaTime:float):
         pygame.K_s: (0, 1)
     }
 
+
+
     direction = pygame.Vector2(0,0)
     for key, (dx, dy) in key_directions.items():
         if keys[key]:
             direction += pygame.Vector2(dx, dy)
+        
     if direction.length_squared() > 0:
         direction.normalize_ip()
     player.set_direction(direction)
 
 def update(deltaTime:float):
+    if random.random() < 0.01:
+        print("add")
+        create_enemy()
     for enemy in globals.ENEMIES:
         enemy.update(deltaTime)
     globals.PLAYER.update(deltaTime)

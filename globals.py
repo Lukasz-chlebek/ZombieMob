@@ -21,6 +21,8 @@ OBSTACLES:List[Obstacles.obstacles.Obstacles] = []
 BULLETS:List[Bullet.bullet.Bullet] = []
 ENEMIES:List[Enemy.enemy.Enemy] = []
 lines:List[line.Line] =[]
+debug_draw = False
+
 
 
 def clear_lines():

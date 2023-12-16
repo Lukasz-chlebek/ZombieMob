@@ -16,18 +16,40 @@ class Enemy(pygame.sprite.Sprite):
         self.heading:pygame.Vector2 = pygame.Vector2()
         self.side:pygame.Vector2 = pygame.Vector2()
         self.mass:float = 1
-        self.maxVelocity:float = 400
+        self.maxVelocity:float = 250
         self.maxForce:float = 800
         self.maxTrunRate:float = 10
-        self.steering = SteeringBehaviors(self)
         self.is_in_world = False
-        
+        self.neighbors = []
+        self.max_dinstance_to_neighbor = 150
+        self.max_dinstance_to_neighbor_sq = self.max_dinstance_to_neighbor ** 2
+        self.is_attacking = False
+
+        self.steering = SteeringBehaviors(self)
+
 
     def draw(self) -> None:
         pygame.draw.circle(self.screen, self.color, (self.position.x, self.position.y), self.radius)
 
+
+    def attack(self):
+        self.is_attacking = True
+        for neighbor in self.neighbors:
+            if not neighbor.is_attacking:
+                neighbor.attack()
+        self.color = (255, 255, 0)
+        self.steering.weights = self.steering.attack_weights
+
+
+    def find_neighbors(self):
+        self.neighbors = []
+        for enemy in globals.ENEMIES:
+            if enemy is not self and self.position.distance_squared_to(enemy.position) <= self.max_dinstance_to_neighbor_sq:
+                self.neighbors.append(enemy)
+
     def update(self, deltaTime:float) -> None:
-        acceleration = self.steering.calculate()
+        self.find_neighbors()
+        acceleration = self.steering.calculate(deltaTime)
         self.velocity += acceleration * deltaTime
         if self.velocity.length() > 0:
             self.velocity.clamp_magnitude_ip(self.maxVelocity)
@@ -40,16 +62,17 @@ class Enemy(pygame.sprite.Sprite):
         if self.is_in_world:
             self.checkCollisionWithWalls()
         
+
+
     def checkCollisionWithEntities(self):
+        for neighbor in self.neighbors:
+            if neighbor is self:
+                continue
+            if self.position.distance_to(neighbor.position) <= self.radius + neighbor.radius and (neighbor.position - self.position).length()!=0:
+               self.position = -(neighbor.position - self.position).normalize() * (self.radius + neighbor.radius) + neighbor.position
         for obstacle in globals.OBSTACLES:
             if self.position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
                self.position = -(obstacle.position - self.position).normalize() * (self.radius + obstacle.radius) + obstacle.position
-        for enemy in globals.ENEMIES:
-            if enemy is self:
-                continue
-            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius and (enemy.position - self.position).length()!=0:
-               self.position = -(enemy.position - self.position).normalize() * (self.radius + enemy.radius) + enemy.position
-
 
     def checkCollisionWithWalls(self):
         if self.position.x - self.radius < 0:

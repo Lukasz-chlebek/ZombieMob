@@ -13,7 +13,7 @@ class Player(pygame.sprite.Sprite):
         self.position: pygame.Vector2 = pygame.Vector2(x, y)
         self.radius: float = 20
         self.color = (0, 0, 255)
-        self.speed: float = 500
+        self.speed: float = 300
         self.direction: pygame.Vector2 = pygame.Vector2(0, 0)
 
     def draw(self, mouse_x, mouse_y):

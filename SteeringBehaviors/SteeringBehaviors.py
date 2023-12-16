@@ -15,9 +15,42 @@ class SteeringBehaviors:
         self.wanderJitter:float = 10
         self.wanderTarget = pygame.Vector2(0,0)
         self.wall_distance_avoid = self.vehicle.radius * 10
+        self.wander_weights = {
+            "wander": 3,
+            "wall_avoidance": 10 if self.vehicle.is_in_world else 0,
+            "obstacles_avoidance": 10,
+            "hide": 7,
+            "flee_from_mouse": 0,
+            "flee_from_player": 2,
+            "separation": 2.5,
+            "seek": 0.1,
+            "alignment": 2,
+            "cohesion": 2
+        }
+        self.attack_weights = {
+            "wander": 2,
+            "wall_avoidance": 10 if self.vehicle.is_in_world else 0,
+            "obstacles_avoidance": 10,
+            "hide": 0,
+            "flee_from_mouse": 1,
+            "flee_from_player": 0,
+            "separation": 20,
+            "seek": 1,
+            "alignment": 10,
+            "cohesion": 10
+        }
+
+        self.weights = self.wander_weights
+        self.attack_distance = 125
+        self.attack_distance_sq = self.attack_distance ** 2
+        self.number_of_neighbors_to_attack = 20
 
     def seek(self, target:pygame.Vector2) -> pygame.Vector2:
-        desiredVelocity = (target - self.vehicle.Pos()).normalize() * self.vehicle.maxForce
+        temp = (target - self.vehicle.Pos())
+        if temp.length() != 0:
+            desiredVelocity = temp.normalize() * self.vehicle.maxForce
+        else:
+            desiredVelocity = pygame.Vector2(0,0)
         return desiredVelocity - self.vehicle.velocity
 
     def arrive(self, target:pygame.Vector2):
@@ -181,13 +214,119 @@ class SteeringBehaviors:
             return pygame.Vector2(0,0) #tu evade
         return self.arrive(best_hiding_spot) # zmienic na arrive
 
-    def calculate(self) -> pygame.Vector2:
-        wander = self.wander() * 1
-        wall_avoidance = self.wall_avoidance() * 10 if self.vehicle.is_in_world else pygame.Vector2(0,0)
-        obstacle_avoidance = self.obstacles_avoidance() * 10
-        hide = self.hide() * 4
-        flee = self.flee(pygame.Vector2(pygame.mouse.get_pos()))
-        accumulatedForce = wander + wall_avoidance + obstacle_avoidance + hide + flee
+
+    def separation(self): 
+        SteeringForce:pygame.Vector2 = pygame.Vector2(0,0)
+        neighbors = self.vehicle.neighbors
+        for a, neighbor in enumerate(neighbors):
+            #make sure this agent isn't included in the calculations and that
+            #the agent being examined is close enough. ***also make sure it doesn't
+            #include the evade target ***
+            if(neighbors[a] != self.vehicle):     
+                ToAgent:pygame.Vector2 = self.vehicle.position - neighbors[a].position
+
+                #//scale the force inversely proportional to the agents distance  
+                #//from its neighbor.
+                if ToAgent.length() != 0:
+                    SteeringForce += (ToAgent).normalize()/ToAgent.length()
+            
+        return SteeringForce
+
+    """
+    //---------------------------- Alignment ---------------------------------
+    //
+    //  returns a force that attempts to align this agents heading with that
+    //  of its neighbors
+    //------------------------------------------------------------------------
+    """
+    def alignment(self):
+    
+        #used to record the average heading of the neighbors
+        AverageHeading:pygame.Vector2 = pygame.Vector2(0,0)
+
+        #//used to count the number of vehicles in the neighborhood
+        NeighborCount = len(self.vehicle.neighbors)
+
+        #iterate through all the tagged vehicles and sum their heading vectors
+        neighbors = self.vehicle.neighbors
+        for a, neighbor in enumerate(neighbors):  
+            #make sure *this* agent isn't included in the calculations and that
+            #the agent being examined  is close enough ***also make sure it doesn't
+            #include any evade target ***
+            if(neighbor != self.vehicle):
+                AverageHeading += neighbor.heading 
+            
+        #if the neighborhood contained one or more vehicles, average their
+        #heading vectors.
+        if (NeighborCount > 0):
+            AverageHeading /= NeighborCount
+            AverageHeading -= self.vehicle.heading
+    
+        return AverageHeading
+    
+    """
+    //-------------------------------- Cohesion ------------------------------
+    //
+    //  returns a steering force that attempts to move the agent towards the
+    //  center of mass of the agents in its immediate area
+    //------------------------------------------------------------------------
+    """
+    def cohesion(self):
+        
+        #first find the center of mass of all the agents
+        CenterOfMass:pygame.Vector2 = pygame.Vector2(0,0)
+        SteeringForce:pygame.Vector2 = pygame.Vector2(0,0)
+
+        NeighborCount = len(self.vehicle.neighbors)
+
+        #iterate through the neighbors and sum up all the position vectors
+        for a, neighbor in enumerate(self.vehicle.neighbors): 
+            #make sure *this* agent isn't included in the calculations and that
+            #the agent being examined is close enough ***also make sure it doesn't
+            #include the evade target ***
+            if(self.vehicle != neighbor):
+                CenterOfMass += neighbor.position
+
+        if (NeighborCount > 0):
+            #the center of mass is the average of the sum of positions
+            CenterOfMass /= NeighborCount
+            #now seek towards that position
+            SteeringForce = self.seek(CenterOfMass)
+
+        #the magnitude of cohesion is usually much larger than separation or
+        #allignment so it usually helps to normalize it.
+        if SteeringForce.length() != 0:
+            return SteeringForce.normalize()
+        else:
+            return SteeringForce
+
+
+    def check_if_attack(self, deltaTime):
+        #chance to attack within 5s based on number of neigbhors
+        chance = min(len(self.vehicle.neighbors) / self.number_of_neighbors_to_attack, 1) * deltaTime / 5
+        print("1", chance)
+        #chance to attack within 0.5s based on distance to player
+        chance += min(self.attack_distance_sq / self.vehicle.position.distance_squared_to(globals.PLAYER.position), 1) * deltaTime / 2
+        print("2", chance)
+        if random.random() <= chance:
+            self.vehicle.attack()
+
+
+    def calculate(self, deltaTime) -> pygame.Vector2:
+        if not self.vehicle.is_attacking:
+            self.check_if_attack(deltaTime)
+        wander = self.wander() * self.weights["wander"]
+        wall_avoidance = self.wall_avoidance() * self.weights["wall_avoidance"] if self.vehicle.is_in_world else pygame.Vector2(0,0)
+        obstacle_avoidance = self.obstacles_avoidance() * self.weights["obstacles_avoidance"]
+        hide = self.hide() * self.weights["hide"]
+        flee_from_mouse = self.flee(pygame.Vector2(pygame.mouse.get_pos())) * self.weights["flee_from_mouse"]
+        flee_from_player = self.flee(globals.PLAYER.position) * self.weights["flee_from_player"]
+        separation = self.separation() * self.weights["separation"]
+        seek = self.seek(globals.PLAYER.position) * self.weights["seek"]
+        cohesion = self.cohesion() * self.weights["cohesion"]
+        alignment = self.alignment() * self.weights["alignment"]
+        accumulatedForce: pygame.Vector2 = wander + wall_avoidance + obstacle_avoidance + hide + flee_from_mouse + flee_from_player + separation + seek + cohesion + alignment
+
         return accumulatedForce
         return self.obstacles_avoidance()*10 + self.flee(pygame.Vector2(pygame.mouse.get_pos())) + self.wander()
         return self.flee(pygame.Vector2(pygame.mouse.get_pos()))
