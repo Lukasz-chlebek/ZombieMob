@@ -7,6 +7,8 @@ import Player.player
 import Bullet.bullet
 import Enemy.enemy
 
+LAST_SHOOT_TIME = 0
+SHOOT_COOLDOWN = 300
 SCORE = 0
 BEST_SCORE = 0
 WIDTH = 1080

@@ -81,10 +81,12 @@ def redraw():
     pygame.display.update()
 
 def get_mouse(player):
+    timer = pygame.time.get_ticks()
     mouse_position = pygame.mouse.get_pos()
     if pygame.mouse.get_pressed(3)[0] and not globals.enable_rapid_fire:
         globals.BULLETS.append(player.shoot(mouse_position))
-    elif globals.enable_rapid_fire and player.is_shooting:
+    elif globals.enable_rapid_fire and player.is_shooting and timer - globals.LAST_SHOOT_TIME > globals.SHOOT_COOLDOWN:
+        globals.LAST_SHOOT_TIME = timer
         globals.BULLETS.append(player.shoot(mouse_position))
 
 
