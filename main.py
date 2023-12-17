@@ -82,8 +82,11 @@ def redraw():
 
 def get_mouse(player):
     mouse_position = pygame.mouse.get_pos()
-    if pygame.mouse.get_pressed(3)[0]:
+    if pygame.mouse.get_pressed(3)[0] and not globals.enable_rapid_fire:
         globals.BULLETS.append(player.shoot(mouse_position))
+    elif globals.enable_rapid_fire and player.is_shooting:
+        globals.BULLETS.append(player.shoot(mouse_position))
+
 
 
 def get_input(player, deltaTime:float):
@@ -141,8 +144,16 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                get_mouse(globals.PLAYER)
+            if not globals.enable_rapid_fire:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    get_mouse(globals.PLAYER)
+            else:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    globals.PLAYER.is_shooting = True
+                if event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+                    globals.PLAYER.is_shooting = False
+        if globals.enable_rapid_fire:
+            get_mouse(globals.PLAYER)
         if not globals.PLAYER.is_alive:
             is_end_screen = True
             running = False

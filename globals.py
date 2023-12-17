@@ -24,6 +24,7 @@ BULLETS:List[Bullet.bullet.Bullet] = []
 ENEMIES:List[Enemy.enemy.Enemy] = []
 lines:List[line.Line] =[]
 debug_draw = False
+enable_rapid_fire = True
 
 
 

@@ -15,6 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.color = (0, 0, 255)
         self.speed: float = 300
         self.is_alive = True
+        self.is_shooting = False
         self.direction: pygame.Vector2 = pygame.Vector2(0, 0)
 
     def draw(self, mouse_x, mouse_y):
