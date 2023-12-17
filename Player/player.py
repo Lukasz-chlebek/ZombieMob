@@ -14,6 +14,7 @@ class Player(pygame.sprite.Sprite):
         self.radius: float = 20
         self.color = (0, 0, 255)
         self.speed: float = 300
+        self.is_alive = True
         self.direction: pygame.Vector2 = pygame.Vector2(0, 0)
 
     def draw(self, mouse_x, mouse_y):
@@ -37,6 +38,7 @@ class Player(pygame.sprite.Sprite):
         self.move(deltaTime)
         self.check_collide_with_border(deltaTime)
         self.check_collide_with_obstacles(deltaTime)
+        self.check_collide_with_enemies(deltaTime)
 
     def shoot(self, mouse_position: pygame.Vector2):
         direction = mouse_position - self.position
@@ -48,6 +50,11 @@ class Player(pygame.sprite.Sprite):
             if self.position.distance_to(obstacle.position) <= self.radius + obstacle.radius:
                 self.position = -(obstacle.position - self.position).normalize() * (
                             self.radius + obstacle.radius) + obstacle.position
+
+    def check_collide_with_enemies(self, deltaTime: float):
+        for enemy in globals.ENEMIES:
+            if self.position.distance_to(enemy.position) <= self.radius + enemy.radius:
+                self.is_alive = False
 
     def check_collide_with_border(self, deltaTime):
         if self.position.x + self.radius > globals.WIDTH:
